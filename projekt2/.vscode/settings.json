@@ -1,0 +1,6 @@
+{
+    "files.associations": {
+        "uart.h": "c",
+        "twi.h": "c"
+    }
+}
