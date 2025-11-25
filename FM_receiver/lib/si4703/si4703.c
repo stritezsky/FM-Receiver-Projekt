@@ -25,33 +25,48 @@ static void write_registers(void) {
 }
 
 void si4703_init(void) {
-  // Reset a inicializace
-  DDRD |= (1 << PD2); // RESET pin jako výstup
-  PORTD &= ~(1 << PD2);
-  _delay_ms(1);
-  PORTD |= (1 << PD2);
-  _delay_ms(1);
+    // 1. DEFINE PINS
+    // SDIO (SDA) is on PC4 (Analog 4 on Uno)
+    // RESET is on PD2 (Digital 2 on Uno)
 
-  twi_init();
+    // 2. SET SDIO (SDA) LOW to select 2-Wire (I2C) mode
+    DDRC |= (1 << PC4);    // Set PC4 (SDA) as Output
+    PORTC &= ~(1 << PC4);  // Set PC4 (SDA) LOW
 
-  read_registers();
-  regs[0x07] = 0x8100;
-  write_registers();
-  _delay_ms(500);
+    // 3. RESET SEQUENCE
+    DDRD |= (1 << PD2);    // Set RESET pin as Output
+    PORTD &= ~(1 << PD2);  // Set RESET LOW
+    _delay_ms(1);          
+    
+    PORTD |= (1 << PD2);   // Set RESET HIGH (Chip wakes up now)
+    _delay_ms(1);
 
-  read_registers();
-  regs[POWERCFG] = 0x4001;
-  regs[SYSCONFIG1] |= (1 << 12); // RDS
-  regs[SYSCONFIG2] |= (1 << 4);  // 100 kHz spacing
-  regs[SYSCONFIG2] = (regs[SYSCONFIG2] & 0xFFF0) | 0x0001;
-  write_registers();
-  _delay_ms(110);
+    // 4. Release SDIO (SDA) so TWI hardware can take over
+    // Setting it to input allows the TWI library to control it
+    DDRC &= ~(1 << PC4);   // Set PC4 back to Input 
+    
+    // 5. Initialize TWI Hardware
+    twi_init();
+
+    // The rest of your initialization code remains the same...
+    read_registers();
+    regs[0x07] = 0x8100; // Enable Oscillator
+    write_registers();
+    _delay_ms(500);
+
+    read_registers();
+    regs[POWERCFG] = 0x4001; // Enable IC
+    regs[SYSCONFIG1] |= (1 << 12); // RDS
+    regs[SYSCONFIG2] |= (1 << 4);  // 100 kHz spacing
+    regs[SYSCONFIG2] = (regs[SYSCONFIG2] & 0xFFF0) | 0x0001; // Min Volume
+    write_registers();
+    _delay_ms(110);
 }
 
 void si4703_power_on(void) { si4703_init(); }
 
 void si4703_set_channel(uint16_t freq) {
-  uint16_t chan = (freq - 875) / 10;
+  uint16_t chan = (freq - 875);
   read_registers();
   regs[CHANNEL] = (chan & 0x03FF) | (1 << TUNE);
   write_registers();
@@ -114,6 +129,8 @@ uint16_t si4703_get_channel(void) {
 
 void si4703_read_rds(char *buffer, uint16_t timeout_ms) {
   uint16_t t = 0;
+  uint8_t completed_mask = 0; // Bitmask to track received blocks (0-3)
+
   for (uint8_t i = 0; i < 8; i++)
     buffer[i] = '-';
   buffer[8] = '\0';
@@ -123,9 +140,20 @@ void si4703_read_rds(char *buffer, uint16_t timeout_ms) {
     if (regs[STATUSRSSI] & (1 << RDSR)) {
       uint16_t b = regs[RDSB];
       uint8_t idx = b & 0x03;
-      buffer[idx * 2] = (regs[RDSD] >> 8) & 0xFF;
-      buffer[idx * 2 + 1] = regs[RDSD] & 0xFF;
+      
+      // FIX 4: Only update buffer if no errors in block B (< 500 is a rough check from C++)
+      if (b < 500) { 
+          buffer[idx * 2] = (regs[RDSD] >> 8) & 0xFF;
+          buffer[idx * 2 + 1] = regs[RDSD] & 0xFF;
+          
+          // Track which blocks we have received
+          completed_mask |= (1 << idx);
+      }
     }
+    
+    // FIX 5: Exit early if we have all 4 blocks (mask binary 1111 = 15)
+    if (completed_mask == 15) break;
+
     _delay_ms(40);
     t += 40;
   }
