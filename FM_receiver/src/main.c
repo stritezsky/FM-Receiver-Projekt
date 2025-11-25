@@ -3,6 +3,7 @@
 #include <si4703.h>
 #include <twi.h>            // I2C/TWI library for AVR-GCC
 #include <uart.h>    
+#include <stdlib.h>
 #include <avr/interrupt.h>        // Peter Fleury's UART library
 int main(void) {
     uart_init(UART_BAUD_SELECT(9600, F_CPU));
