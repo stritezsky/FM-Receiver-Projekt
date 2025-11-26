@@ -5,31 +5,31 @@
 #include <uart.h>    
 #include <stdlib.h>
 #include <avr/interrupt.h>        // Peter Fleury's UART library
+#include <oled.h>
+
 int main(void) {
     uart_init(UART_BAUD_SELECT(9600, F_CPU));
     twi_init();
     si4703_power_on();
-    //twi_init();
-    //twi_start();
     uint16_t freq = 0;
     uint8_t vol = 0;
     char rds[9];
     sei();
     char uart_msg[8];
+    oled_init(OLED_DISP_ON);
+    
+
+    oled_charMode(DOUBLESIZE);
+
     uart_puts("FM radio ready\r\n");
     
     while (1) {
-        // 1. Get the 16-bit value from the library
         unsigned int uart_data = uart_getc();
 
-        // 2. Check if the data is valid
-        // The upper byte is 0 if data is valid. It is non-zero if error or no data.
         if ((uart_data & 0xFF00) == 0) {
             
-            // 3. Safe to cast to char now
             char c = (char)(uart_data & 0x00FF);
 
-            // 4. Process commands
             if (c == 'n') {
                 freq = si4703_seek_up();
             } else if (c == 'd') {
@@ -54,15 +54,16 @@ int main(void) {
                 uart_puts("\r\n");
             }
 
-            // 5. Update status ONLY when a command was processed
             uart_puts("Freq: ");
-            itoa(freq, uart_msg, 10); // Use base 10 for readability (not 8)
+            itoa(freq, uart_msg, 10); 
             uart_puts(uart_msg);
-            
             uart_puts(" MHz | Vol: ");
-            itoa(vol, uart_msg, 10); // Use base 10
+            itoa(vol, uart_msg, 10); 
             uart_puts(uart_msg);
             uart_puts("\r\n");
+            oled_clrscr();
+            oled_puts(uart_msg);
+            oled_display();
         }
     }
 }
