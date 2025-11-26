@@ -52,6 +52,8 @@ int main(void) {
                 uart_puts("RDS: ");
                 uart_puts(rds);
                 uart_puts("\r\n");
+                oled_puts(rds);
+                oled_display();
             }
 
             uart_puts("Freq: ");
@@ -61,9 +63,7 @@ int main(void) {
             itoa(vol, uart_msg, 10); 
             uart_puts(uart_msg);
             uart_puts("\r\n");
-            oled_clrscr();
-            oled_puts(uart_msg);
-            oled_display();
+            
         }
     }
 }

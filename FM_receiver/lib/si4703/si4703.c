@@ -141,8 +141,10 @@ void si4703_read_rds(char *buffer, uint16_t timeout_ms) {
       uint16_t b = regs[RDSB];
       uint8_t idx = b & 0x03;
       
-      // FIX 4: Only update buffer if no errors in block B (< 500 is a rough check from C++)
-      if (b < 500) { 
+      // FIXED: Check if Group Type is 0 (Basic Tuning) instead of b < 500.
+      // Group 0 packets contain the Program Service name.
+      // Mask 0xF000 isolates the 4-bit Group Type.
+      if ((b & 0xF000) == 0) { 
           buffer[idx * 2] = (regs[RDSD] >> 8) & 0xFF;
           buffer[idx * 2 + 1] = regs[RDSD] & 0xFF;
           
@@ -151,7 +153,7 @@ void si4703_read_rds(char *buffer, uint16_t timeout_ms) {
       }
     }
     
-    // FIX 5: Exit early if we have all 4 blocks (mask binary 1111 = 15)
+    // Exit early if we have all 4 blocks (mask binary 1111 = 15)
     if (completed_mask == 15) break;
 
     _delay_ms(40);
