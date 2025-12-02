@@ -11,3 +11,6 @@ This project tries to get a radio module Si4703, up and running, so that we can 
 
 System Block diagram showing how our overall FM receiver works
 ![Block Diagram of Project Components](blockdiagram.png)
+
+Pseudocode showing the software structure:
+![Pseudocode](pseudocode.png)
