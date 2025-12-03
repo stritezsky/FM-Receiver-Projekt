@@ -12,7 +12,6 @@
 #define pCLK     PD3
 #define pDT      PD4
 #define BTN_UP   PD5  // Seek Up
-#define BTN_DOWN PD6  // Seek Down (New Pin)
 
 // Helper function to handle the OLED layout
 void update_display(uint16_t freq, uint8_t vol, char* rds_text) {
@@ -53,7 +52,6 @@ int main(void) {
     gpio_mode_input_pullup(&DDRD, pCLK);
     gpio_mode_input_pullup(&DDRD, pDT);
     gpio_mode_input_pullup(&DDRD, BTN_UP);
-    gpio_mode_input_pullup(&DDRD, BTN_DOWN); // Enable pull-up for new button
 
     sei(); // Enable Interrupts
 
@@ -87,7 +85,12 @@ int main(void) {
                 oled_puts("Seeking Up..");
                 oled_display();
                 
+                
                 freq = si4703_seek_up();
+                if (freq > 1080) freq = 1080;
+                if (freq < 875) freq = 875;
+                
+                si4703_set_channel(freq);
                 si4703_read_rds(rds, 1000);
                 
                 uart_puts("RDS: ");

@@ -59,11 +59,11 @@ void si4703_init(void) {
     // Set SKSNR (SNR Threshold) to 4 (Bits 7:4 in SYSCONFIG3)
     // Set SKCNT (FM Impulse Detection) to 0 (Bits 3:0 in SYSCONFIG3)
     regs[SYSCONFIG3] &= 0xFF00; 
-    regs[SYSCONFIG3] |= (4 << 4); // SNR = 4 (range 0-15)
+    regs[SYSCONFIG3] |= (9 << 4); // SNR = 4 (range 0-15)
     
     // Set SEEKTH (RSSI Threshold) to 25 (Bits 15:8 in SYSCONFIG2)
     regs[SYSCONFIG2] &= 0x00FF;
-    regs[SYSCONFIG2] |= (25 << 8); // RSSI = 25 (range 0-127)
+    regs[SYSCONFIG2] |= (20 << 8); // RSSI = 25 (range 0-127)
 
     write_registers();
     _delay_ms(110);
