@@ -13,6 +13,7 @@
 #define CHANNEL      0x03
 #define SYSCONFIG1   0x04
 #define SYSCONFIG2   0x05
+#define SYSCONFIG3   0x06 // Defined SYSCONFIG3
 #define STATUSRSSI   0x0A
 #define READCHAN     0x0B
 #define RDSB         0x0D
@@ -35,5 +36,8 @@ uint16_t si4703_seek_down(void);
 void si4703_set_volume(uint8_t vol);
 uint16_t si4703_get_channel(void);
 void si4703_read_rds(char *buffer, uint16_t timeout_ms);
+
+// New function to tune seek sensitivity
+void si4703_set_seek_threshold(uint8_t snr, uint8_t rssi); 
 
 #endif

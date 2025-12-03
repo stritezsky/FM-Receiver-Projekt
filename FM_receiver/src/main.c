@@ -36,10 +36,7 @@ void update_display(uint16_t freq, uint8_t vol, char* rds_text) {
     oled_puts(buf);
     oled_puts("MHz");
 
-    // Volume (e.g., " V:15")
-    oled_puts(" V:");
-    itoa(vol, buf, 10);
-    oled_puts(buf);
+    
 
     // Push data to display
     oled_display();
@@ -83,7 +80,7 @@ int main(void) {
 
         // --- BUTTON UP: Seek Up ---
         if (gpio_read(&PIND, BTN_UP) == 0) {
-            _delay_ms(20); // Debounce
+            _delay_ms(1); // Debounce
             if (gpio_read(&PIND, BTN_UP) == 0) {
                 uart_puts("Seeking Up...\r\n");
                 oled_clrscr();
@@ -91,25 +88,14 @@ int main(void) {
                 oled_display();
                 
                 freq = si4703_seek_up();
+                si4703_read_rds(rds, 1000);
+                
+                uart_puts("RDS: ");
+                uart_puts(rds);
+                uart_puts("\r\n");
                 changed = 1;
                 
                 while(gpio_read(&PIND, BTN_UP) == 0); // Wait for release
-            }
-        }
-
-        // --- BUTTON DOWN: Seek Down ---
-        if (gpio_read(&PIND, BTN_DOWN) == 0) {
-            _delay_ms(20); // Debounce
-            if (gpio_read(&PIND, BTN_DOWN) == 0) {
-                uart_puts("Seeking Down..\r\n");
-                oled_clrscr();
-                oled_puts("Seeking Dn..");
-                oled_display();
-                
-                freq = si4703_seek_down();
-                changed = 1;
-                
-                while(gpio_read(&PIND, BTN_DOWN) == 0); // Wait for release
             }
         }
 
@@ -128,9 +114,12 @@ int main(void) {
                 if (freq < 875) freq = 875;
 
                 si4703_set_channel(freq);
+                
                 changed = 1;
             }
+            
         }
+        
         stateB = stateCLK;
 
         // --- UART Commands ---
@@ -158,7 +147,7 @@ int main(void) {
                 oled_puts("Reading RDS...");
                 oled_display();
                 
-                si4703_read_rds(rds, 15000);
+                si4703_read_rds(rds, 1000);
                 
                 uart_puts("RDS: ");
                 uart_puts(rds);
