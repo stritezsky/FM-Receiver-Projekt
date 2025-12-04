@@ -7,170 +7,102 @@
 #include <avr/interrupt.h>
 #include <oled.h>
 #include <gpio.h>
-
+#include <encoder.h>
+#include "timer.h"
 // --- PIN DEFINITIONS ---
-#define pCLK     PD3
-#define pDT      PD4
 #define BTN_UP   PD5  // Seek Up
 
-// Helper function to handle the OLED layout
-void update_display(uint16_t freq, uint8_t vol, char* rds_text) {
+// function to handle the OLED layout
+void update_display(uint16_t freq, char* rds_text) {
     char buf[10];
-
-    // Clear buffer to prevent overlapping text
     oled_clrscr();
-
-    // --- Line 1: RDS Text ---
-    oled_gotoxy(0, 0); // Top left
+    
+    // Line 1: RDS
+    oled_gotoxy(0, 0); 
     oled_puts(rds_text);
-
-    // --- Line 2: Frequency & Volume ---
+    
+    // Line 2: Frequency
     oled_gotoxy(0, 2); 
-
-    // Frequency (e.g., "105.5")
-    itoa(freq / 10, buf, 10); // Integer part (105)
+    itoa(freq / 10, buf, 10); 
     oled_puts(buf);
     oled_puts(".");
-    itoa(freq % 10, buf, 10); // Decimal part (5)
+    itoa(freq % 10, buf, 10); 
     oled_puts(buf);
-    oled_puts("MHz");
-
+    oled_puts(" MHz");
     
-
-    // Push data to display
     oled_display();
 }
 
 int main(void) {
-    // 1. Initialize Libraries
+    // Initialize Libraries
     uart_init(UART_BAUD_SELECT(9600, F_CPU));
     twi_init();
     si4703_power_on();
     oled_init(OLED_DISP_ON);
-    
-    // 2. Configure Inputs (Enable Internal Pull-ups)
-    gpio_mode_input_pullup(&DDRD, pCLK);
-    gpio_mode_input_pullup(&DDRD, pDT);
     gpio_mode_input_pullup(&DDRD, BTN_UP);
-
+    encoder_init();
     sei(); // Enable Interrupts
 
-    // 3. Variables
+    // Variables
     uint16_t freq = 875; // Start at 87.5 MHz
     uint8_t vol = 9;
-    char rds[9] = "No RDS  ";
-    char uart_msg[10];
-
-    // Encoder State
-    uint8_t stateB = gpio_read(&PIND, pCLK);
-    uint8_t stateCLK = 0;
-
+    char rds_buffer[9] = "No RDS  ";
+    uint32_t last_tune_time = 0;
+    uint8_t rds_update_needed = 0;
     oled_charMode(DOUBLESIZE);
     
     // Initial Display Update
     si4703_set_volume(vol);
     si4703_set_channel(freq);
-    update_display(freq, vol, rds);
+    update_display(freq, rds_buffer);
     uart_puts("FM radio ready\r\n");
     
     while (1) {
-        uint8_t changed = 0; // Flag to check if we need to update display
+        int8_t enc_diff = encoder_read();
+        if (enc_diff != 0) {
+            freq += enc_diff;
+            if (freq > 1080) freq = 1080;
+            if (freq < 875) freq = 875;
 
-        // --- BUTTON UP: Seek Up ---
+            si4703_set_channel(freq);
+            
+            // Clear RDS text immediately on tune
+            
+            update_display(freq, "Tuning.."); 
+
+            // Reset the "Settle Timer"
+            last_tune_time = millis_homebrew();
+            rds_update_needed = 1; 
+        }
+
+        // Button (Seek)
         if (gpio_read(&PIND, BTN_UP) == 0) {
-            _delay_ms(1); // Debounce
+            _delay_ms(20); 
             if (gpio_read(&PIND, BTN_UP) == 0) {
-                uart_puts("Seeking Up...\r\n");
-                oled_clrscr();
-                oled_puts("Seeking Up..");
-                oled_display();
-                
-                
+                update_display(freq, "Seeking..");
                 freq = si4703_seek_up();
-                if (freq > 1080) freq = 1080;
-                if (freq < 875) freq = 875;
-                
-                si4703_set_channel(freq);
-                si4703_read_rds(rds, 1000);
-                
-                uart_puts("RDS: ");
-                uart_puts(rds);
-                uart_puts("\r\n");
-                changed = 1;
-                
-                while(gpio_read(&PIND, BTN_UP) == 0); // Wait for release
-            }
-        }
-
-        // --- ENCODER: Manual Tune ---
-        stateCLK = gpio_read(&PIND, pCLK);
-        if (stateCLK != stateB) {
-            _delay_ms(2); 
-            if (gpio_read(&PIND, pCLK) == stateCLK) {
-                if (gpio_read(&PIND, pDT) != stateCLK) {
-                    freq++; // Right/CW
-                } else {
-                    freq--; // Left/CCW
-                }
-                
-                if (freq > 1080) freq = 1080;
-                if (freq < 875) freq = 875;
-
                 si4703_set_channel(freq);
                 
-                changed = 1;
-            }
-            
-        }
-        
-        stateB = stateCLK;
-
-        // --- UART Commands ---
-        unsigned int uart_data = uart_getc();
-        if ((uart_data & 0xFF00) == 0) {
-            char c = (char)(uart_data & 0x00FF);
-
-            if (c == 'n') {
-                freq = si4703_seek_up();
-                changed = 1;
-            } else if (c == 'd') {
-                freq = si4703_seek_down();
-                changed = 1;
-            } else if (c == '+') {
-                if (vol < 15) vol++;
-                si4703_set_volume(vol);
-                changed = 1;
-            } else if (c == '-') {
-                if (vol > 0) vol--;
-                si4703_set_volume(vol);
-                changed = 1;
-            } else if (c == 'r') {
-                uart_puts("Reading RDS...\r\n");
-                oled_clrscr();
-                oled_puts("Reading RDS...");
-                oled_display();
+                // Reset settle timer after seek too
+                last_tune_time = millis_homebrew();
+                rds_update_needed = 1;
                 
-                si4703_read_rds(rds, 1000);
-                
-                uart_puts("RDS: ");
-                uart_puts(rds);
-                uart_puts("\r\n");
-                changed = 1;
+                while(gpio_read(&PIND, BTN_UP) == 0); 
             }
         }
 
-        // --- Update Screen if Changed ---
-        if (changed) {
-            update_display(freq, vol, rds);
+        if (rds_update_needed && (millis_homebrew() - last_tune_time > 1000)) {
             
-            // Also update UART
-            uart_puts("Freq: ");
-            itoa(freq, uart_msg, 10);
-            uart_puts(uart_msg);
-            uart_puts(" | Vol: ");
-            itoa(vol, uart_msg, 10);
-            uart_puts(uart_msg);
-            uart_puts("\r\n");
+            uart_puts("Station Settled. Reading RDS...\r\n");
+            
+            // Read RDS 
+            si4703_read_rds(rds_buffer, 1500); 
+            
+            // Update screen with final data
+            update_display(freq, rds_buffer);
+            
+            // Clear flag so we don't read again until next tune
+            rds_update_needed = 0; 
         }
     }
     return 0;
