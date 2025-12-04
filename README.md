@@ -30,7 +30,7 @@ System Block diagram showing how our overall FM receiver works
 - Last is a refresh, where the program applies all the changes (sets frequency, finds RDS, updates display)
 
 ## Video showcase
-![Video showcase](https://www.youtube.com/shorts/2aHMWGsBpYU)
+[![Here](https://img.youtube.com/vi/2aHMWGsBpYU/0.jpg)](https://www.youtube.com/watch?v=2aHMWGsBpYU)
 
 ## References
 - Si4703 breakout board library, Simon Monk. 2011-09-09
