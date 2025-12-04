@@ -13,6 +13,7 @@ This project tries to get a radio module Si4703, up and running, so that we can 
 - Frequency seeking
 - Keeping it simple but effective
 
+## Component table
 
 | **Component**             | **Description**                                                                                   | **Justification for Use**                                                                                                                                                                                                                             |
 | ------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -20,6 +21,7 @@ This project tries to get a radio module Si4703, up and running, so that we can 
 | **Si4703 Radio Module**   | A single-chip **FM radio receiver** with digital tuning and RDS (Radio Data System) capabilities. | This is the **core functional component** of our project. It handles all the complex radio frequency (RF) receiving and audio processing. It communicates with the Arduino, allowing us to digitally control the **frequency tuning** and **volume**. |
 | **OLED Screen**           | A small **display**                                                                               | Serves as the **primary output device**. It is essential for displaying key information like the current **FM frequency**.                                                                                                                            |
 | **Rotary Encoder**        | A rotational input device that generates digital pulses when turned.                              | Used for **manual frequency tuning**, allowing for precise, incremental adjustments to the frequency as an alternative to the auto-seek buttons.                                                                                                      |
+## System block diagram
 
 System Block diagram showing how our overall FM receiver works
 ![Block Diagram of Project Components](blockdiagram.png)
