@@ -1,4 +1,4 @@
-# FM-Receiver-Projekt
+# FM-Receiver-Project
 ## Project description
 This project tries to get a radio module Si4703, up and running, so that we can receive FM frequencies. There are two modes of changing frequencies. A seeking one and a manual one. We seek frequencies up and down with a set of buttons. An OLED display is used for showing the current station name using RDS and frequency. The main issue of this project is that all the documentation and example programs for this module is written in C++ and relies on Arduino libraries, but we´ve decided to write everything in C without using them. To solve this issue we must rewrite our libraries to C, while keeping their functionality as similar as possible. Instead of Arduino libraries we use Community created UART, I2C, OLED and timer libraries.
 
