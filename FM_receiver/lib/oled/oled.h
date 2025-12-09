@@ -41,6 +41,17 @@
  *  DISPLAY-WIDTH * DISPLAY-HEIGHT + 2 bytes
  */
 
+ /**
+ * @file oled.h
+ * @defgroup oled_lib OLED Display Library <oled.h>
+ * @code #include <oled.h> @endcode
+ *
+ * @brief Library for interfacing with SSD1306/SH1106 OLED displays.
+ *
+ * Supports text and graphic modes over I2C.
+ *
+ * @{
+ */
 #ifndef OLED_H
 #define OLED_H
 
@@ -139,7 +150,7 @@ void oled_flip(uint8_t flipping);  // flip display,
     uint8_t oled_check_buffer(uint8_t x, uint8_t y); // read a pixel value from the display buffer
     void oled_display_block(uint8_t x, uint8_t line, uint8_t width); // display (part of) a display line
 #endif
-
+/** @} */ // End of oled_lib group
 #ifdef __cplusplus
 }
 #endif
