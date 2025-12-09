@@ -44,8 +44,8 @@ int main(void) {
     sei(); // Enable Interrupts
 
     // Variables
-    uint16_t freq = 875; // Start at 87.5 MHz
-    uint8_t vol = 9;
+    uint16_t freq = 951; // Start at 87.5 MHz
+    uint8_t vol = 5;
     char rds_buffer[9] = "No RDS  ";
     uint32_t last_tune_time = 0;
     uint8_t rds_update_needed = 0;
@@ -91,12 +91,12 @@ int main(void) {
             }
         }
 
-        if (rds_update_needed && (millis_homebrew() - last_tune_time > 1000)) {
+        if (rds_update_needed && (millis_homebrew() - last_tune_time > 2000)) {
             
             uart_puts("Station Settled. Reading RDS...\r\n");
             
             // Read RDS 
-            si4703_read_rds(rds_buffer, 1500); 
+            si4703_read_rds(rds_buffer, 3000); 
             
             // Update screen with final data
             update_display(freq, rds_buffer);
