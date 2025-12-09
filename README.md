@@ -31,6 +31,8 @@ System Block diagram showing how our overall FM receiver works
 - Next the program processes inputs, there are two modes. You can either seek up with a press of the encoder or manually change frequency with spining it
 - Last is a refresh, where the program applies all the changes (sets frequency, finds RDS, updates display)
 
+![Flowchart](flowchart.png)
+
 ## Hardware Logic
 ![Hardware logic](hardwareconnection.png)
 
