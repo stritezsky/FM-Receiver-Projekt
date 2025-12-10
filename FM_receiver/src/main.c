@@ -61,8 +61,8 @@ int main(void) {
         int8_t enc_diff = encoder_read();
         if (enc_diff != 0) {
             freq += enc_diff;
-            if (freq > 1080) freq = 1080;
-            if (freq < 875) freq = 875;
+            if (freq > 1080) freq = 875;
+            if (freq < 875) freq = 1080;
 
             si4703_set_channel(freq);
             
@@ -96,7 +96,7 @@ int main(void) {
             uart_puts("Station Settled. Reading RDS...\r\n");
             
             // Read RDS 
-            si4703_read_rds(rds_buffer, 3000); 
+            si4703_read_rds(rds_buffer, 2000); 
             
             // Update screen with final data
             update_display(freq, rds_buffer);
